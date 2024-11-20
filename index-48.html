@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stroop实验</title>
+    <script src="https://unpkg.com/jspsych@7.3.4"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.3"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.2.1"></script><!-- 全屏插件 -->
+    <link href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@1.0.3"></script> <!-- 信息填写插件 -->
+    <script src="https://unpkg.com/@jspsych/plugin-call-function@2.0.0"></script><!--全局设置-->
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@2.0.0"></script><!--按钮插件-->
+    <script src="https://unpkg.com/@jspsych/plugin-survey-likert@1.1.3"></script><!--李克特插件-->
+    <script src="https://unpkg.com/@jspsych/plugin-browser-check@2.0.0"></script><!--检查是否电脑插件-->
+    <script src="https://unpkg.com/@jspsych/plugin-preload@2.0.0"></script><!--预加载插件-->
+    <link rel="icon" href="icon.webp" type="image/webp"><!--网页图标-->
+    <script src="jatos.js"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey@1.0.1"></script>
+    <link href="exp.css" rel="stylesheet" type="text/css"><!-- CSS外部 -->
+</head>
+<body>
+    <script>
+///////////////////////////////
+        ///检查是否电脑作答
+        var brower = {
+            type: jsPsychBrowserCheck,
+            minimum_width: 600,
+            minimum_height: 400,
+            window_resize_message:'你的浏览器窗口过小，请使用电脑作答，感谢配合。<br/>点击下方按钮即可结束实验。',
+            resize_fail_button_text: '结束实验',
+            exclusion_message: () => { return '你的显示窗口过小，请调大显示窗口或者切换电脑作答。' }
+        };
+////////////////////////////////
+
+        var jsPsych = initJsPsych({
+             on_trial_start: jatos.addAbortButton,
+             on_finish: () => jatos.endStudy(jsPsych.data.get().csv())
+        });
+
+        /////////////////////////////
+        //////////////    获取编号
+
+        let subjectID = null;  // 声明全局变量
+        let subject_info = {
+            type: jsPsychSurveyHtmlForm,
+            preamble: '<h3>请填写以下信息</h3>',
+            html: `
+            <p>
+                编号: <input name="subject_id" type="text" pattern="\\d{5}" title="请输入正确编号" required><br> 
+            </p>
+            `,
+            on_finish: function(data) {
+                // 获取subject_id并保存到全局变量
+                subjectID = data.response.subject_id;
+            },
+            button_label: '继续'
+        };
+
+
+        /////////////////////////////
+        ////////////   全屏须知
+        let open_fullscreen = {   
+			type: jsPsychFullscreen,   
+			fullscreen_mode: true,
+			message: 
+            '<p style="font: 16pt 微软雅黑; text-align: left; line-height: 1.6em">'+
+			'<b>'+
+			'测验将在一个「全屏页面」开始，为确保最佳效果，请你：<br/>'+
+			'（1）在电脑上进行测验，并使用主流浏览器打开本网页<br/>'+
+			'（Chrome、Edge、Firefox、Safari等，不要用IE）<br/>'+
+			'（2）关掉电脑上其他正在运行的程序或将其最小化<br/>'+
+			'（3）将手机调至静音，并尽可能减少环境噪音干扰<br/>'+
+			'（4）在测验过程中不要退出全屏<br/>'+
+			'（5）务必认真作答<br/><br/>'+
+			'</b>'+
+			'如果你同意参与，并且清楚理解了上述要求，请点击“全屏模式”：'+
+			'</p>',
+
+			button_label: '全屏模式',
+			delay_after: 500
+		};
+        //预加载
+        var preload = {
+                        type: jsPsychPreload,
+                        auto_preload: true
+                    };
+        ///退出全屏
+        let	quit_fullscreen = {
+			type: jsPsychFullscreen,
+			fullscreen_mode: false,
+			//全部结束，鼠标出现
+			on_finish: function () {
+				let bodyNode = document.getElementsByTagName("body");
+				for (let i = 0; i < bodyNode.length; i++) {
+					bodyNode[i].style.cursor = "default";
+				}
+			}
+		};
+
+        ////////////////////////////
+        ///////////   设置全局style
+
+        var set_style = {
+            type: jsPsychCallFunction,
+            func: function () {
+                document.body.style.backgroundColor = 'black'; 
+                document.body.style.color = 'white'; 
+                document.body.style.fontFamily = '微软雅黑';
+                document.body.style.cursor = 'default';
+                document.body.style.lineHeight = '1.6em'; 
+                document.body.onselectstart = function () { return false; }; 
+                document.body.oncontextmenu = function () { return false; }; 
+
+                document.onkeydown = function (event) {
+                    const keyCode = event.keyCode || event.which;
+
+                    // 定义需要禁用的按键
+                    const disabledKeys = {
+                        27: 'Esc',           // Esc
+                        116: 'F5',           // F5
+                        123: 'F12',          // F12
+                        20: 'Caps Lock',     // Caps Lock
+                        85: 'U'              // U
+                    };
+
+                    // 禁用特定按键和组合键
+                    if (keyCode in disabledKeys || (event.ctrlKey && keyCode === 85)) {
+                        event.preventDefault();
+                        return false;
+                    }
+                };
+            }
+        };
+
+
+        ////////////////////////////
+        ///////////   实验主介绍
+
+        function timer() {
+            var second = document.getElementById('timer');
+            var button = document.getElementsByClassName('jspsych-btn')[0];
+            if (second != null) {
+                if (second.innerHTML > 1) {
+                    second.innerHTML = second.innerHTML - 1;
+                } else {
+                    button.innerHTML = '开始实验';
+                    button.disabled = false;
+                }
+            }
+        }
+        const btn_html_timer = (choice) => `
+            <style onload="tid=setInterval(timer, 1000)"></style>
+            <button onclick="clearInterval(tid)" class="jspsych-btn" disabled>${choice}</button>`;
+
+        var instruction = {
+            type: jsPsychHtmlButtonResponse,
+            stimulus:    `
+                <div>
+                    <p style="font: bold 32pt 微软雅黑; color: #B22222">
+                    实验须知</p>
+                    <p style="font-size: 20pt">本实验共分为两个部分</p>
+                    <p style="font-size: 20pt">练习实验+正式实验</p>
+                    <p style="font-size: 20pt">请保证自己所处在一个不被打扰的环境</p>
+                    <p style="font-size: 20pt">实验一旦开始，不得无故离开，否则成绩作废</p>
+                    <p style="font-size: 20pt">请注意在练习实验部分需要正确率达到90%及以上方可进入正式实验</p>
+                    <p style="font-size: 20pt">请认真作答每一部分，实验态度将直接决定您的实验报酬</p>
+                    <p style="font-size: 20pt">请点击“开始实验”即默认同意上述要求</p>
+                    <p style="font-size: 20pt">如若不同意，请按左上角“Esc”退出</p>
+                </div>
+                `,
+            /////////////////决定几秒可以按
+            choices: [' &nbsp;&nbsp;<span id="timer">6</span>&nbsp;&nbsp;&nbsp;秒&nbsp;&nbsp;&nbsp; '],
+            button_html: btn_html_timer,
+            //全部结束后，鼠标消失
+            on_finish: function () {
+				let bodyNode = document.getElementsByTagName("body");
+				for (let i = 0; i < bodyNode.length; i++) {
+					bodyNode[i].style.cursor = "none";
+				}
+			}
+        };
+
+
+        /////////////////////////////////////////////////////////////////////////////////以下为实验部分
+
+
+        //////////////////注视点，全场通用
+        let fixation = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<p style="font-size: 56px;">+</p>',
+            choices: "NO_KEYS",
+            trial_duration: 500
+        };
+
+        ////////////////////////////////////////////////
+        ////////////////////////////
+        ///////////  练习块
+        
+        /////////////练习指导语&提示
+        var tag_LR1 = `
+                    <div class="tag-left">按“A”键<br/><br/><font color="red">红色</font></div>
+                    <div class="tag-left-b">按“D”键<br/><br/><font color="green">绿色</font></div>
+                    <div class="tag-right">按“J”键<br/><br/><font color="yellow">黄色</font></div>
+                    <div class="tag-right-b">按“L”键<br/><br/><font color="blue">蓝色</font></div>
+                    `
+
+        let pre_instruction = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+                <div style="margin-top: 12%; z-index: 10; position: relative;">
+                    <p style="font: 20pt 微软雅黑"><br/>欢迎进入练习实验<br/></p>
+                    <p>在实验中，屏幕中央会呈现一个词语，该词语表示一种颜色。</p>
+                    <p>你的任务是忽略词语的含义，尽快按键报告词语的字体颜色。</p>
+                    <p>请您将双手放在键盘上，左手无名指和食指分别放在键盘的"A"键，"D"键上</p>
+                    <p>右手食指放在"J"键上，无名指放在"L"键上</p>
+                    <p>屏幕上方代表着颜色的按键，请注意，你只需根据颜色按下按键</p>
+                    <p>每次判断均会有正确（“√”）或错误（“X”）的反馈</p>
+                    <p>并在完成后会计算该部分的正确率，只有90%及以上可以进入正式实验</p>
+                    <p>否则本部分将持续执行，直至达到要求</p>
+                    <p>请在保证正确的前提下，尽快作出反应，认真作答</p>
+                    <p>如果你已准备好，请按空格键开始实验</p>
+                </div>
+                `,
+
+            choices: " ",
+            prompt:tag_LR1,
+            post_trial_gap: 500
+        };
+ 		//按键反馈
+        let feedback = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                let last_trial_correct = jsPsych.data.get().last(1).values()[0].correct;
+                return last_trial_correct ? '<p style="color: red; font-size: 56px;">√</p>' :
+                                            '<p style="color: green; font-size: 56px;">X</p>';
+            },
+            choices: "NO_KEYS",
+            trial_duration: 500,
+            post_trial_gap: 500
+        };
+		//因为刺激时循环的，所以使用函数来定义trial、时间线变量、时间线
+		//定义block中trial的函数
+        function practice_trial(word, color, congruency, block) {
+            return {
+                type: jsPsychHtmlKeyboardResponse,
+                stimulus: `<span style="color: ${color}; font-size: 56px;">${word}</span>`,
+                choices: ['a', 'd', 'j', 'l'],
+                trial_duration: 1500,
+                data: { word: word, color: color, correct_response: congruency, block: block },
+                on_finish: function(data) {
+                    data.correct = (data.color === 'red' && data.response === 'a') ||
+                                   (data.color === 'green' && data.response === 'd') ||
+                                   (data.color === 'yellow' && data.response === 'j') ||
+                                   (data.color === 'blue' && data.response === 'l');
+                }
+            };
+        }
+
+
+		//定义时间线变量函数
+        function createTimelineVariables(block) {
+            return [
+                { "word": '红', "color": 'red', "congruency": 'a', "block": block },
+                { word: '红', color: 'green', congruency: 'd', block: block },
+                { "word": '绿', "color": 'green', "congruency": 'd', "block": block },
+                { word: '绿', color: 'red', congruency: 'a', block: block },
+                { "word": '黄', "color": 'yellow', "congruency": 'j', "block": block },
+                { word: '黄', color: 'blue', congruency: 'l', block: block },
+                { "word": '蓝', "color": 'blue', "congruency": 'j', "block": block },
+                { word: '蓝', color: 'yellow', congruency: 'l', block: block }
+            ];
+        }
+		//定义练习实验时间线函数--一个block
+        function createPracticeTimeline(block) {
+            let timeline_variables = createTimelineVariables(block);
+            let practice_timeline = [];
+            let shuffled_variables = jsPsych.randomization.shuffle(timeline_variables); // 随机化试次
+            //循环次数
+            for (let i = 0; i < 3; i++) {
+            shuffled_variables.forEach(function(variable) {
+            practice_timeline.push(fixation);//
+            practice_timeline.push(practice_trial(variable.word, variable.color, variable.congruency, variable.block));
+            practice_timeline.push(feedback);
+        })
+    };
+            return practice_timeline
+        };
+		//是在上面的
+        let practice_block = 1;
+		//定义练习时间线
+        let practice_timeline = createPracticeTimeline(practice_block);
+        
+        ////////////////// ////////////////////   
+        /////////////////// debrief块
+        let debrief = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                let practice_block_data = jsPsych.data.get().filter({ block: practice_block });
+                let correct_trials = practice_block_data.filter({ correct: true }).count();
+                let total_trials = practice_block_data.count();
+                let accuracy = correct_trials / total_trials;
+
+                let debrief_message = '<p>本轮实验结束，您的正确率是 ' + (accuracy * 100).toFixed(2) + '%。</p>';
+                // 90% 及以上的正确率继续正式实验
+                if (accuracy >= 0.9) {
+                    debrief_message += '<p>表现不错，请再接再厉，按空格键进入正式实验。</p>';
+                } else {
+                    debrief_message += '<p>您的正确率不足90%，请按空格键再次练习测验。</p>';
+                }
+
+                return debrief_message;
+            },
+            choices: function() {
+                let practice_block_data = jsPsych.data.get().filter({ block: practice_block });
+                let correct_trials = practice_block_data.filter({ correct: true }).count();
+                let total_trials = practice_block_data.count();
+                let accuracy = correct_trials / total_trials;
+
+                return accuracy >= 0.9 ? [" "] : "ALL_KEYS";
+            },
+            on_finish: function(data) {
+                let practice_block_data = jsPsych.data.get().filter({ block: practice_block });
+                let correct_trials = practice_block_data.filter({ correct: true }).count();
+                let total_trials = practice_block_data.count();
+                let accuracy = correct_trials / total_trials;
+
+                if (accuracy < 0.9) {
+                    practice_block++;
+                    jsPsych.addNodeToEndOfTimeline(pre_instruction);
+                    let new_practice_timeline = createPracticeTimeline(practice_block);
+                    new_practice_timeline.forEach(function(trial) {
+                        jsPsych.addNodeToEndOfTimeline(trial);
+                    });
+                    jsPsych.addNodeToEndOfTimeline(debrief);
+                } 
+                /////////////////////否则将进入formal_timeline
+                else {
+                    jsPsych.addNodeToEndOfTimeline({timeline: formal_timeline});
+                }
+         
+            }
+        };
+
+        let timeline=[];   
+        timeline.push(brower);
+        timeline.push(subject_info);
+        timeline.push(preload);  
+        timeline.push(open_fullscreen);
+        timeline.push(set_style);
+        timeline.push(instruction);
+        timeline.push(pre_instruction);
+        timeline.push({ timeline: practice_timeline });
+        timeline.push(debrief);
+
+        ///////////////////////////////////////////
+        //////////////    正式实验部分
+        ////////////////////////////////以下进入正式实验section
+
+        let formal_instruction = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div style="margin-top: 15%; z-index: 10; position: relative; text-align: center;">
+                <p style="font: 30pt 微软雅黑; color: red;">现在是正式实验</p>
+                <p style="color: white;">接下来你将经历10次实验</p>
+                <p style="color: white;">你的任务同练习部分一致，只需判断屏幕中字体的颜色</p>
+                <p style="color: white;">请确认自己正处于安静的环境下，避免在实验过程当中被打扰</p>
+                <p style="color: white;">实验进行当中不得离开，否则成绩作废</p>
+                <p style="color: white;">如有任何疑问，请及时联系主试</p>
+                <p style="color: white;">若已知晓上述要求，请按空格键开始实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };
+
+
+
+        ////// //创造正式实验时间线
+
+        let formal_timeline = [
+            formal_instruction
+        ];
+
+        // 生成时间线变量的函数
+        function generateTimelineVariables(aa, ab, ba, bb, aa_repeats, ab_repeats, ba_repeats, bb_repeats) {
+            let timelineVariables = [];
+            for (let i = 0; i < aa_repeats; i++) {
+                timelineVariables = timelineVariables.concat(jsPsych.randomization.shuffle(aa));
+            }
+            for (let i = 0; i < ab_repeats; i++) {
+                timelineVariables = timelineVariables.concat(jsPsych.randomization.shuffle(ab));
+            }
+            for (let i = 0; i < ba_repeats; i++) {
+                timelineVariables = timelineVariables.concat(jsPsych.randomization.shuffle(ba));
+            }
+            for (let i = 0; i < bb_repeats; i++) {
+                timelineVariables = timelineVariables.concat(jsPsych.randomization.shuffle(bb));
+            }
+            return jsPsych.randomization.shuffle(timelineVariables);
+        }
+        ////////////增加间隔ISI
+        let ISI = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '', 
+            choices: "NO_KEYS", 
+            trial_duration: 500 
+        };
+        //////////////////定义trial
+        /////////////
+        let block_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                let stimulus = jsPsych.timelineVariable('stim');
+                let color = jsPsych.timelineVariable('color');
+                return `<p style="color: ${color}; font-size: 56px;">${stimulus}</p>`;
+            },
+            choices: ['a', 'd', 'j', 'l'],
+            trial_duration: 1500,
+            data: {
+                word: jsPsych.timelineVariable('stim'),
+                color: jsPsych.timelineVariable('color'),
+                correct_response: jsPsych.timelineVariable('correct'),
+                id: jsPsych.timelineVariable('id'),
+                block: jsPsych.timelineVariable('block'),
+                congruency: jsPsych.timelineVariable('congruency'),
+                self: jsPsych.timelineVariable('self'),
+                most: jsPsych.timelineVariable('most')
+            },
+            randomize_order: false,
+            on_finish: function(data) {
+                data.correct = (data.response === data.correct_response);
+            }
+        };
+
+        ///////////////////
+        ///////////////block1
+        // 刺激变量
+        let block1_aa = [
+            {"stim":"我的 红","color":"red","correct":"a","id":111,"block":"block1","congruency":"con","self":"self","most":"mc"},
+            {"stim":"我的 绿","color":"green","correct":"d","id":112,"block":"block1","congruency":"con","self":"self","most":"mc"},
+            {"stim":"我的 黄","color":"yellow","correct":"j","id":113,"block":"block1","congruency":"con","self":"self","most":"mc"},
+            {"stim":"我的 蓝","color":"blue","correct":"l","id":114,"block":"block1","congruency":"con","self":"self","most":"mc"}
+        ];
+
+        let block1_ab = [
+            {"stim":"我的 红","color":"green","correct":"d","id":102,"block":"block1","congruency":"incon","self":"self","most":"mc"},
+            {"stim":"我的 绿","color":"red","correct":"a","id":101,"block":"block1","congruency":"incon","self":"self","most":"mc"},
+            {"stim":"我的 黄","color":"blue","correct":"l","id":104,"block":"block1","congruency":"incon","self":"self","most":"mc"},
+            {"stim":"我的 蓝","color":"yellow","correct":"j","id":103,"block":"block1","congruency":"incon","self":"self","most":"mc"}
+        ];
+
+        // 生成随机化后的时间线变量
+        let block1_timelineVariables = generateTimelineVariables(block1_aa, block1_ab, [], [], 9, 3, 0, 0);
+
+        let block1_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block1_timelineVariables,
+            randomize_order: true
+        };
+
+
+        ////////////////////////
+        ////////////block2
+        let block2_ba = [
+            {"stim":"这个 红","color":"red","correct":"a","id":11,"block":"block2","congruency":"con","self":"non-self","most":"mc"},
+            {"stim":"这个 绿","color":"green","correct":"d","id":12,"block":"block2","congruency":"con","self":"non-self","most":"mc"},
+            {"stim":"这个 黄","color":"yellow","correct":"j","id":13,"block":"block2","congruency":"con","self":"non-self","most":"mc"},
+            {"stim":"这个 蓝","color":"blue","correct":"l","id":14,"block":"block2","congruency":"con","self":"non-self","most":"mc"}
+        ];
+
+        let block2_bb = [
+            {"stim":"这个 红","color":"green","correct":"d","id":2,"block":"block2","congruency":"incon","self":"non-self","most":"mc"},
+            {"stim":"这个 绿","color":"red","correct":"a","id":1,"block":"block2","congruency":"incon","self":"non-self","most":"mc"},
+            {"stim":"这个 黄","color":"blue","correct":"l","id":4,"block":"block2","congruency":"incon","self":"non-self","most":"mc"},
+            {"stim":"这个 蓝","color":"yellow","correct":"j","id":3,"block":"block2","congruency":"incon","self":"non-self","most":"mc"}
+        ];
+
+        let block2_timelineVariables = generateTimelineVariables([], [], block2_ba, block2_bb, 0, 0, 9, 3);
+
+
+        let block2_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block2_timelineVariables,
+            randomize_order: true
+        };
+        ////////////////
+
+        ////////////block3
+        let block3_ba = [
+        {"stim":"这个 红","color":"red","correct":"a","id":11,"block":"block3","congruency":"con","self":"non-self","most":"mc"},
+            {"stim":"这个 绿","color":"green","correct":"d","id":12,"block":"block3","congruency":"con","self":"non-self","most":"mc"},
+            {"stim":"这个 黄","color":"yellow","correct":"j","id":13,"block":"block3","congruency":"con","self":"non-self","most":"mc"},
+            {"stim":"这个 蓝","color":"blue","correct":"l","id":14,"block":"block3","congruency":"con","self":"non-self","most":"mc"}
+        ];
+
+        let block3_bb = [
+            {"stim":"这个 红","color":"green","correct":"d","id":2,"block":"block3","congruency":"incon","self":"non-self","most":"mc"},
+            {"stim":"这个 绿","color":"red","correct":"a","id":1,"block":"block3","congruency":"incon","self":"non-self","most":"mc"},
+            {"stim":"这个 黄","color":"blue","correct":"l","id":4,"block":"block3","congruency":"incon","self":"non-self","most":"mc"},
+            {"stim":"这个 蓝","color":"yellow","correct":"j","id":3,"block":"block3","congruency":"incon","self":"non-self","most":"mc"}
+        ];
+
+        let block3_timelineVariables = generateTimelineVariables([], [], block3_ba, block3_bb, 0, 0, 9, 3);
+
+
+        let block3_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block3_timelineVariables,
+            randomize_order: true
+        };
+        ////////////////
+
+        ///////////////block4
+        // 刺激变量
+        let block4_aa = [
+            {"stim":"我的 红","color":"red","correct":"a","id":111,"block":"block4","congruency":"con","self":"self","most":"mc"},
+            {"stim":"我的 绿","color":"green","correct":"d","id":112,"block":"block4","congruency":"con","self":"self","most":"mc"},
+            {"stim":"我的 黄","color":"yellow","correct":"j","id":113,"block":"block4","congruency":"con","self":"self","most":"mc"},
+            {"stim":"我的 蓝","color":"blue","correct":"l","id":114,"block":"block4","congruency":"con","self":"self","most":"mc"}
+        ];
+
+        let block4_ab = [
+            {"stim":"我的 红","color":"green","correct":"d","id":102,"block":"block4","congruency":"incon","self":"self","most":"mc"},
+            {"stim":"我的 绿","color":"red","correct":"a","id":101,"block":"block4","congruency":"incon","self":"self","most":"mc"},
+            {"stim":"我的 黄","color":"blue","correct":"l","id":104,"block":"block4","congruency":"incon","self":"self","most":"mc"},
+            {"stim":"我的 蓝","color":"yellow","correct":"j","id":103,"block":"block4","congruency":"incon","self":"self","most":"mc"}
+        ];
+
+        // 生成随机化后的时间线变量
+        let block4_timelineVariables = generateTimelineVariables(block4_aa, block4_ab, [], [], 9, 3, 0, 0);
+
+        let block4_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block4_timelineVariables,
+            randomize_order: true
+        };
+        /////////////////////////
+
+        ///////////////block5
+        // 刺激变量
+        let block5_aa = [
+            {"stim":"我的 红","color":"red","correct":"a","id":111,"block":"block5","congruency":"con","self":"self","most":"neu"},
+            {"stim":"我的 绿","color":"green","correct":"d","id":112,"block":"block5","congruency":"con","self":"self","most":"neu"},
+            {"stim":"我的 黄","color":"yellow","correct":"j","id":113,"block":"block5","congruency":"con","self":"self","most":"neu"},
+            {"stim":"我的 蓝","color":"blue","correct":"l","id":114,"block":"block5","congruency":"con","self":"self","most":"neu"}
+        ];
+
+        let block5_ab = [
+            {"stim":"我的 红","color":"green","correct":"d","id":102,"block":"block5","congruency":"incon","self":"self","most":"neu"},
+            {"stim":"我的 绿","color":"red","correct":"a","id":101,"block":"block5","congruency":"incon","self":"self","most":"neu"},
+            {"stim":"我的 黄","color":"blue","correct":"l","id":104,"block":"block5","congruency":"incon","self":"self","most":"neu"},
+            {"stim":"我的 蓝","color":"yellow","correct":"j","id":103,"block":"block5","congruency":"incon","self":"self","most":"neu"}
+        ];
+
+        // 生成随机化后的时间线变量
+        let block5_timelineVariables = generateTimelineVariables(block5_aa, block5_ab, [], [], 6, 6, 0, 0);
+
+        let block5_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block5_timelineVariables,
+            randomize_order: true
+        };
+        ///////////////block6
+        // 刺激变量
+        let block6_ba = [
+            {"stim":"这个 红","color":"red","correct":"a","id":11,"block":"block6","congruency":"con","self":"non-self","most":"neu"},
+            {"stim":"这个 绿","color":"green","correct":"d","id":12,"block":"block6","congruency":"con","self":"non-self","most":"neu"},
+            {"stim":"这个 黄","color":"yellow","correct":"j","id":13,"block":"block6","congruency":"con","self":"non-self","most":"neu"},
+            {"stim":"这个 蓝","color":"blue","correct":"l","id":14,"block":"block6","congruency":"con","self":"non-self","most":"neu"}
+        ];
+
+        let block6_bb = [
+            {"stim":"这个 红","color":"green","correct":"d","id":2,"block":"block6","congruency":"incon","self":"non-self","most":"neu"},
+            {"stim":"这个 绿","color":"red","correct":"a","id":1,"block":"block6","congruency":"incon","self":"non-self","most":"neu"},
+            {"stim":"这个 黄","color":"blue","correct":"l","id":4,"block":"block6","congruency":"incon","self":"non-self","most":"neu"},
+            {"stim":"这个 蓝","color":"yellow","correct":"j","id":3,"block":"block6","congruency":"incon","self":"non-self","most":"neu"}
+        ];
+
+        // 生成随机化后的时间线变量
+        let block6_timelineVariables = generateTimelineVariables([], [], block6_ba, block6_bb, 0, 0, 6, 6);
+
+        let block6_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block6_timelineVariables,
+            randomize_order: true
+        };
+        /////////////////////
+        ///////////////////
+        ///////////////block7
+        // 刺激变量
+        let block7_aa = [
+            {"stim":"我的 红","color":"red","correct":"a","id":111,"block":"block7","congruency":"con","self":"self","most":"mi"},
+            {"stim":"我的 绿","color":"green","correct":"d","id":112,"block":"block7","congruency":"con","self":"self","most":"mi"},
+            {"stim":"我的 黄","color":"yellow","correct":"j","id":113,"block":"block7","congruency":"con","self":"self","most":"mi"},
+            {"stim":"我的 蓝","color":"blue","correct":"l","id":114,"block":"block7","congruency":"con","self":"self","most":"mi"}
+        ];
+
+        let block7_ab = [
+            {"stim":"我的 红","color":"green","correct":"d","id":102,"block":"block7","congruency":"incon","self":"self","most":"mi"},
+            {"stim":"我的 绿","color":"red","correct":"a","id":101,"block":"block7","congruency":"incon","self":"self","most":"mi"},
+            {"stim":"我的 黄","color":"blue","correct":"l","id":104,"block":"block7","congruency":"incon","self":"self","most":"mi"},
+            {"stim":"我的 蓝","color":"yellow","correct":"j","id":103,"block":"block7","congruency":"incon","self":"self","most":"mi"}
+        ];
+
+        // 生成随机化后的时间线变量
+        let block7_timelineVariables = generateTimelineVariables(block7_aa, block7_ab, [], [], 3, 9, 0, 0);
+
+        let block7_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block7_timelineVariables,
+            randomize_order: true
+        };
+
+
+        ////////////////////////
+        ////////////block8
+        let block8_ba = [
+            {"stim":"这个 红","color":"red","correct":"a","id":11,"block":"block8","congruency":"con","self":"non-self","most":"mi"},
+            {"stim":"这个 绿","color":"green","correct":"d","id":12,"block":"block8","congruency":"con","self":"non-self","most":"mi"},
+            {"stim":"这个 黄","color":"yellow","correct":"j","id":13,"block":"block8","congruency":"con","self":"non-self","most":"mi"},
+            {"stim":"这个 蓝","color":"blue","correct":"l","id":14,"block":"block8","congruency":"con","self":"non-self","most":"mi"}
+        ];
+
+        let block8_bb = [
+            {"stim":"这个 红","color":"green","correct":"d","id":2,"block":"block8","congruency":"incon","self":"non-self","most":"mi"},
+            {"stim":"这个 绿","color":"red","correct":"a","id":1,"block":"block8","congruency":"incon","self":"non-self","most":"mi"},
+            {"stim":"这个 黄","color":"blue","correct":"l","id":4,"block":"block8","congruency":"incon","self":"non-self","most":"mi"},
+            {"stim":"这个 蓝","color":"yellow","correct":"j","id":3,"block":"block8","congruency":"incon","self":"non-self","most":"mi"}
+        ];
+
+        let block8_timelineVariables = generateTimelineVariables([], [], block8_ba, block8_bb, 0, 0, 3, 9);
+
+
+        let block8_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block8_timelineVariables,
+            randomize_order: true
+        };
+        ////////////////
+
+        ////////////block9
+        let block9_ba = [
+            {"stim":"这个 红","color":"red","correct":"a","id":11,"block":"block9","congruency":"con","self":"non-self","most":"mi"},
+            {"stim":"这个 绿","color":"green","correct":"d","id":12,"block":"block9","congruency":"con","self":"non-self","most":"mi"},
+            {"stim":"这个 黄","color":"yellow","correct":"j","id":13,"block":"block9","congruency":"con","self":"non-self","most":"mi"},
+            {"stim":"这个 蓝","color":"blue","correct":"l","id":14,"block":"block9","congruency":"con","self":"non-self","most":"mi"}
+        ];
+
+        let block9_bb = [
+            {"stim":"这个 红","color":"green","correct":"d","id":2,"block":"block9","congruency":"incon","self":"non-self","most":"mi"},
+            {"stim":"这个 绿","color":"red","correct":"a","id":1,"block":"block9","congruency":"incon","self":"non-self","most":"mi"},
+            {"stim":"这个 黄","color":"blue","correct":"l","id":4,"block":"block9","congruency":"incon","self":"non-self","most":"mi"},
+            {"stim":"这个 蓝","color":"yellow","correct":"j","id":3,"block":"block9","congruency":"incon","self":"non-self","most":"mi"}
+        ];
+
+        let block9_timelineVariables = generateTimelineVariables([], [], block9_ba, block9_bb, 0, 0, 3, 9);
+
+
+        let block9_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block9_timelineVariables,
+            randomize_order: true
+        };
+        ////////////////
+
+        ///////////////block10
+        // 刺激变量
+        let block10_aa = [
+            {"stim":"我的 红","color":"red","correct":"a","id":111,"block":"block10","congruency":"con","self":"self","most":"mi"},
+            {"stim":"我的 绿","color":"green","correct":"d","id":112,"block":"block10","congruency":"con","self":"self","most":"mi"},
+            {"stim":"我的 黄","color":"yellow","correct":"j","id":113,"block":"block10","congruency":"con","self":"self","most":"mi"},
+            {"stim":"我的 蓝","color":"blue","correct":"l","id":114,"block":"block10","congruency":"con","self":"self","most":"mi"}
+        ];
+
+        let block10_ab = [
+            {"stim":"我的 红","color":"green","correct":"d","id":102,"block":"block10","congruency":"incon","self":"self","most":"mi"},
+            {"stim":"我的 绿","color":"red","correct":"a","id":101,"block":"block10","congruency":"incon","self":"self","most":"mi"},
+            {"stim":"我的 黄","color":"blue","correct":"l","id":104,"block":"block10","congruency":"incon","self":"self","most":"mi"},
+            {"stim":"我的 蓝","color":"yellow","correct":"j","id":103,"block":"block10","congruency":"incon","self":"self","most":"mi"}
+        ];
+
+        // 生成随机化后的时间线变量
+        let block10_timelineVariables = generateTimelineVariables(block10_aa, block10_ab, [], [], 3, 9, 0, 0);
+
+        let block10_procedure = {
+            timeline: [fixation, block_trial, ISI],
+            timeline_variables: block10_timelineVariables,
+            randomize_order: true
+        };
+
+ ///////////////////////////////////////////////////       
+///////////////////////休息加倒计时
+
+        let rest = {
+            type: jsPsychSurveyLikert,
+            questions: [
+                {prompt: 
+                 `<P>您已经完成任务的一半了</p>
+                <P>请选择所需休息的时间</p>
+                 `, 
+                 labels: ['10秒', '30秒', '1分钟', '1分30秒', '2分钟'], 
+                 required: true
+        		}
+            ],
+			//选择休息时间，鼠标出现
+			on_start: function () {
+				let bodyNode = document.getElementsByTagName("body");
+				for (let i = 0; i < bodyNode.length; i++) {
+					bodyNode[i].style.cursor = "default";
+				}
+			},
+			scale_width: 500,
+			button_label: '继续'
+        };
+		
+///////////////////////////////////////////////
+var set_style_rest = {
+            type: jsPsychCallFunction,
+            func: function () {
+                // 添加过渡效果
+                document.body.style.transition = 'background-color 2s ease, color 2s ease';
+
+                // 设置目标背景颜色和文字颜色
+                document.body.style.backgroundColor = 'rgb(199, 237, 204)'; 
+                document.body.style.color = 'black'; 
+
+                document.body.style.fontFamily = '微软雅黑';
+                document.body.style.cursor = 'default';
+                document.body.style.lineHeight = '1.6em'; 
+                document.body.onselectstart = function () { return false; }; 
+                document.body.oncontextmenu = function () { return false; }
+            }
+        };
+		// 倒计时函数
+        function startCountdown(duration, display) {
+            let timer = duration, minutes, seconds;
+            let interval = setInterval(function () {
+                minutes = parseInt(timer / 60, 10);
+                seconds = parseInt(timer % 60, 10);
+
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = minutes + " : " + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+		
+        // 休息倒计时
+       // 休息倒计时
+       var countdown_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '<div class="countdown-container"><div id="countdown-timer" class="countdown-timer">-- : --</div><div class="countdown-message">如果您休息好了，请双手放在键盘上，并按空格键继续</div></div>',
+            choices: [" "],
+            on_load: function() {
+                // 开始倒计时
+				var resp = jsPsych.data.get().last(1).values()[0].response.Q0;
+                switch (resp) {
+					case 0: var clock = 10;break;
+					case 1: var clock = 30;break;
+					case 2: var clock = 60;break;
+					case 3: var clock = 90;break;
+					case 4: var clock = 120;break;
+					default: var clock=60;
+				} 
+                var display = document.querySelector('#countdown-timer');
+                startCountdown(clock, display);
+            },
+            ///鼠标消失
+            on_start: function () {
+				let bodyNode = document.getElementsByTagName("body");
+				for (let i = 0; i < bodyNode.length; i++) {
+					bodyNode[i].style.cursor = "none";
+				}
+			}
+        };
+
+        /////////////////
+        let jiange = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '', 
+            choices: "NO_KEYS", 
+            trial_duration: 2000 
+        };
+        let jiange1 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: '', 
+            choices: "NO_KEYS", 
+            trial_duration: 2000 ,
+        ///鼠标消失
+             on_load: function () {
+				let bodyNode = document.getElementsByTagName("body");
+				for (let i = 0; i < bodyNode.length; i++) {
+					bodyNode[i].style.cursor = "none";
+				}
+			}
+        };
+
+        //////////////////
+        let rest_procedure = {
+            timeline: [set_style_rest, jiange, rest, countdown_trial, set_style ,jiange1],
+            sample: {
+                type: 'fixed-repetitions',
+                size: 1
+            }
+        };
+//////////////添加提示语
+        //提示语1
+        let remind1 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">1</span>次测验！</p>
+                <p>还有<span style="color: red;">9</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        }; 
+        //提示语2
+        let remind2 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">2</span>次测验！</p>
+                <p>还有<span style="color: red;">8</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        }; 
+
+        //提示语3
+        let remind3 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">3</span>次测验！</p>
+                <p>还有<span style="color: red;">7</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        }; 
+            
+        //提示语4
+        let remind4 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">4</span>次测验！</p>
+                <p>还有<span style="color: red;">6</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };      
+
+        //提示语5
+        let remind5 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">5</span>次测验！</p>
+                <p>还有<span style="color: red;">5</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };        
+
+        //提示语6
+        let remind6 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">6</span>次测验！</p>
+                <p>还有<span style="color: red;">4</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };      
+        //提示语6
+        let remind7 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">7</span>次测验！</p>
+                <p>还有<span style="color: red;">3</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };      
+          
+        //提示语8
+        let remind8 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">8</span>次测验！</p>
+                <p>还有<span style="color: red;">2</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };      
+        
+         //提示语9
+        let remind9 = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成第<span style="color: red;">9</span>次测验！</p>
+                <p>还有<span style="color: red;">1</span>次</p>
+                <p>请继续保持，按空格键继续实验</p>
+            </div>
+            `,
+            choices: [" "],
+            post_trial_gap: 500
+        };      
+          
+           
+        
+
+////////////// 结束语
+        let end_remark = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: `
+            <div>
+                <p>您已完成本实验！</p>
+                <p>请联系主试</p>
+                <p>并按空格键将实验数据上传</p>
+            </div>
+            `,
+            choice:[" "]
+        };
+//////////////配置正式实验子时间线的顺序
+        //添加block1进入子时间线
+        formal_timeline.push(block1_procedure);
+        //添加提示语1
+        formal_timeline.push(remind1);
+        //添加block2进入子时间线
+        formal_timeline.push(block2_procedure); 
+        //添加提示语2
+        formal_timeline.push(remind2);
+        //添加block3进入子时间线
+        formal_timeline.push(block3_procedure);
+        //添加提示语3
+        formal_timeline.push(remind3);
+        //添加block4进入子时间线
+        formal_timeline.push(block4_procedure);
+        //添加休息和滑动
+        formal_timeline.push(remind4);
+        //添加block5进入子时间线
+        formal_timeline.push(block5_procedure);  
+        //添加提示语5
+        formal_timeline.push(rest_procedure);
+        //添加block6进入子时间线
+        formal_timeline.push(block6_procedure);
+        //添加提示语6
+        formal_timeline.push(remind6);
+        //添加block7进入子时间线
+        formal_timeline.push(block7_procedure);
+        //添加提示语7
+        formal_timeline.push(remind7);
+        //添加block8进入子时间线
+        formal_timeline.push(block8_procedure);  
+        //添加提示语8
+        formal_timeline.push(remind8);    
+        //添加block9进入子时间线
+        formal_timeline.push(block9_procedure);   
+        //添加提示语9
+        formal_timeline.push(remind9);
+        //添加block10进入子时间线   
+        formal_timeline.push(block10_procedure);      
+                 
+        //添加结束语
+		formal_timeline.push(end_remark);
+        //增加退出全屏
+        formal_timeline.push(quit_fullscreen);
+       
+
+        jatos.onLoad(() => {
+            jsPsych.run(timeline);
+        });
+    </script>
+</body>
+</html>
