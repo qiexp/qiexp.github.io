@@ -41,3 +41,14 @@ body {
     top: 15%; /* 增加top值 */
     right: 20%;
 }
+.tag-left, .tag-left-b, .tag-right, .tag-right-b {
+    flex: 1; /* 自动调整宽度 */
+    text-align: center; /* 居中对齐 */
+    margin: 0 1%; /* 添加一些间距 */
+}
+
+@media (max-width: 1400px) { /* 针对小屏幕的调整 */
+    .tag-left, .tag-left-b, .tag-right, .tag-right-b {
+        font-size: 18pt; /* 缩小字体 */
+    }
+}

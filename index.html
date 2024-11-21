@@ -33,10 +33,14 @@
         };
 ////////////////////////////////
 
-        var jsPsych = initJsPsych({
-             on_trial_start: jatos.addAbortButton,
-             on_finish: () => jatos.endStudy(jsPsych.data.get().csv())
-        });
+            const jsPsych = initJsPsych({
+                on_finish: function() {
+                    jsPsych.data.get().localSave('csv', `data_exp_cse_${subjectID}.csv`);
+                    document.getElementById('jspsych-content').innerHTML += '实验结束，感谢您的参与！';
+                }
+            });
+
+           
 
         /////////////////////////////
         //////////////    获取编号
@@ -170,7 +174,7 @@
                 </div>
                 `,
             /////////////////决定几秒可以按
-            choices: [' &nbsp;&nbsp;<span id="timer">6</span>&nbsp;&nbsp;&nbsp;秒&nbsp;&nbsp;&nbsp; '],
+            choices: [' &nbsp;&nbsp;&nbsp;<span id="timer">6</span>&nbsp;&nbsp;秒&nbsp;&nbsp;&nbsp; '],   
             button_html: btn_html_timer,
             //全部结束后，鼠标消失
             on_finish: function () {
@@ -994,9 +998,7 @@ var set_style_rest = {
         formal_timeline.push(quit_fullscreen);
        
 
-        jatos.onLoad(() => {
-            jsPsych.run(timeline);
-        });
+        jsPsych.run(timeline);
     </script>
 </body>
 </html>
