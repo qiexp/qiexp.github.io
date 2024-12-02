@@ -35,7 +35,7 @@
 
             const jsPsych = initJsPsych({
                 on_finish: function() {
-                    jsPsych.data.get().localSave('csv', `data_exp_cse_${subjectID}.csv`);
+                    jsPsych.data.get().localSave('csv', `data_exp_lwpce_${subjectID}.csv`);
                     document.getElementById('jspsych-content').innerHTML += '实验结束，感谢您的参与！';
                 }
             });
@@ -51,14 +51,14 @@
             preamble: '<h3>请填写以下信息</h3>',
             html: `
             <p>
-                编号: <input name="subject_id" type="text" pattern="\\d{5}" title="请输入正确编号" required><br> 
+                学 号: <input name="subject_id" type="text" pattern="\\d{11}" title="请输入正确的学号" required><br> 
             </p>
             `,
             on_finish: function(data) {
                 // 获取subject_id并保存到全局变量
                 subjectID = data.response.subject_id;
             },
-            button_label: '继续'
+            button_label: '下一步'
         };
 
 
@@ -165,12 +165,9 @@
                     实验须知</p>
                     <p style="font-size: 20pt">本实验共分为两个部分</p>
                     <p style="font-size: 20pt">练习实验+正式实验</p>
-                    <p style="font-size: 20pt">请保证自己所处在一个不被打扰的环境</p>
                     <p style="font-size: 20pt">实验一旦开始，不得无故离开，否则成绩作废</p>
-                    <p style="font-size: 20pt">请注意在练习实验部分需要正确率达到90%及以上方可进入正式实验</p>
-                    <p style="font-size: 20pt">请认真作答每一部分，实验态度将直接决定您的实验报酬</p>
-                    <p style="font-size: 20pt">请点击“开始实验”即默认同意上述要求</p>
-                    <p style="font-size: 20pt">如若不同意，请按左上角“Esc”退出</p>
+                    <p style="font-size: 20pt">请注意，在练习实验部分需要正确率达到90%及以上方可进入正式实验</p>
+                    <p style="font-size: 20pt">如遇任何问题，请举手示意老师</p>
                 </div>
                 `,
             /////////////////决定几秒可以按
@@ -219,11 +216,11 @@
                     <p>请您将双手放在键盘上，左手无名指和食指分别放在键盘的"A"键，"D"键上</p>
                     <p>右手食指放在"J"键上，无名指放在"L"键上</p>
                     <p>屏幕上方代表着颜色的按键，请注意，你只需根据颜色按下按键</p>
-                    <p>每次判断均会有正确（“√”）或错误（“X”）的反馈</p>
+                    <p>每次判断均会有正确（“<span style="color: #B22222;">√</span>”）或错误（“<span style="color: #00FF00;">×</span>”）的反馈</p>
                     <p>并在完成后会计算该部分的正确率，只有90%及以上可以进入正式实验</p>
                     <p>否则本部分将持续执行，直至达到要求</p>
                     <p>请在保证正确的前提下，尽快作出反应，认真作答</p>
-                    <p>如果你已准备好，请按空格键开始实验</p>
+                    <p>如果你已准备好，请双手放在指定键位，并按空格键开始实验</p>
                 </div>
                 `,
 
@@ -368,9 +365,9 @@
                 <p style="font: 30pt 微软雅黑; color: red;">现在是正式实验</p>
                 <p style="color: white;">接下来你将经历10次实验</p>
                 <p style="color: white;">你的任务同练习部分一致，只需判断屏幕中字体的颜色</p>
-                <p style="color: white;">请确认自己正处于安静的环境下，避免在实验过程当中被打扰</p>
-                <p style="color: white;">实验进行当中不得离开，否则成绩作废</p>
-                <p style="color: white;">如有任何疑问，请及时联系主试</p>
+                <p style="color: white;">在实验过程当中尽量保证不被打扰</p>
+                <p style="color: white;">中途不得离开和退出，否则成绩作废</p>
+                <p style="color: white;">如有任何疑问，请及时联系老师</p>
                 <p style="color: white;">若已知晓上述要求，请按空格键开始实验</p>
             </div>
             `,
@@ -946,11 +943,10 @@ var set_style_rest = {
             stimulus: `
             <div>
                 <p>您已完成本实验！</p>
-                <p>请联系主试</p>
-                <p>并按空格键将实验数据上传</p>
+                <p>请按空格键下载本次实验数据</p>
             </div>
             `,
-            choice:[" "]
+            choices: " "
         };
 //////////////配置正式实验子时间线的顺序
         //添加block1进入子时间线
